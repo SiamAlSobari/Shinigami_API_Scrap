@@ -4,7 +4,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
-import { nitro } from 'nitro/vite'
+import netlify from '@netlify/vite-plugin-tanstack-start'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const isDev = process.env.NODE_ENV !== 'production'
@@ -12,19 +12,19 @@ const isDev = process.env.NODE_ENV !== 'production'
 const config = defineConfig({
   plugins: [
     ...(isDev ? [devtools()] : []),
-    nitro(),
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
     tanstackStart(),
+    netlify(),
     viteReact(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,
-      outDir: '.output/public',
+      outDir: 'dist/client',
       workbox: {
-        globDirectory: '.output/public',
+        globDirectory: 'dist/client',
         globPatterns: ['**/*.{js,css,ico,png,svg,webmanifest}'],
         navigateFallback: null,
       },

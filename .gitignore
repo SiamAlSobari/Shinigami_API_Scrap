@@ -16,3 +16,6 @@ qa-report.md
 mnemo.json
 test-reports/
 artifacts/
+
+# Local Netlify folder
+.netlify
