@@ -1,10 +1,13 @@
 import axios, { AxiosInstance } from "axios";
 import { getScraperHeaders } from "./headers";
 
-export function createAxiosClient(baseUrl: string): AxiosInstance {
+export function createAxiosClient(
+    baseUrl: string,
+    siteUrl?: string
+): AxiosInstance {
     return axios.create({
         baseURL: baseUrl,
         timeout: 30000,
-        headers: getScraperHeaders(baseUrl),
+        headers: getScraperHeaders(siteUrl),
     });
 }

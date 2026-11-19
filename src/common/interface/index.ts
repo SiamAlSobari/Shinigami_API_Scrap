@@ -20,6 +20,10 @@ export interface Meta {
   total_page: number;
   total_record: number;
   total_data?: number;
+  offset?: number;
+  limit?: number;
+  has_next?: boolean;
+  next_cursor?: string | null;
 }
 
 
@@ -168,8 +172,10 @@ export interface Taxonomy {
 
 
 export interface TaxonomyItem {
+  taxonomy_id?: number;
   name: string;
   slug: string;
+  type?: string;
 }
 
 

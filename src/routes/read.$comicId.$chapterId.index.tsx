@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef, useCallback, memo } from "react";
 import { JsonLd } from "@/common/components/JsonLd";
+import { ServerErrorPanel } from "@/common/components/ServerError";
 
 const SITE_URL = "https://komik-reader.my.id";
 
@@ -224,9 +225,13 @@ function ReadChapterPage() {
   const [autoScrollSpeed] = useState(2);
   const autoScrollRef = useRef<number | null>(null);
 
-  const { data: chapter, isLoading: isChapterLoading } = useQuery(
-    queryChapter(chapterId)
-  );
+  const {
+    data: chapter,
+    isLoading: isChapterLoading,
+    isError: isChapterError,
+    error: chapterError,
+    refetch: refetchChapter,
+  } = useQuery(queryChapter(chapterId));
   const { data: comic } = useQuery(queryComic(comicId));
 
   const chapterData = chapter?.data?.data;
@@ -470,7 +475,14 @@ function ReadChapterPage() {
 
       {/* READER CANVAS */}
       <main className="mx-auto w-full max-w-3xl bg-[#09090b] min-h-[60vh] border-x border-[#27272e]">
-        {isChapterLoading ? (
+        {isChapterError ? (
+          <div className="p-4 sm:p-6">
+            <ServerErrorPanel
+              error={chapterError}
+              reset={() => void refetchChapter()}
+            />
+          </div>
+        ) : isChapterLoading ? (
           <div className="py-24 text-center space-y-4">
             <div className="h-9 w-9 border-2 border-[#be123c] border-t-transparent animate-spin mx-auto" />
             <p className="font-mono text-xs uppercase text-[#c8c2b6]">

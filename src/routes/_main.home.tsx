@@ -20,6 +20,7 @@ import UpdateComicCard from "@/features/comic/UpdateComicCard";
 import BaseComicCardSkeleton from "@/features/comic/BaseComicCardSkeleton";
 import PopularComicCardSkeleton from "@/features/comic/PopularComicCardSkeleton";
 import UpdateComicCardSkeleton from "@/features/comic/UpdateComicCardSkeleton";
+import { ServerErrorPanel } from "@/common/components/ServerError";
 
 const queryRecommendation = (activeTab: string) =>
   queryOptions({
@@ -106,12 +107,39 @@ const TABS = [
 
 function RouteComponent() {
   const [activeTab, setActiveTab] = useState("manhwa");
-  const { data: comicRecomendation, isLoading: comicRecomendationLoading } =
-    useQuery(queryRecommendation(activeTab));
-  const { data: popularComic, isLoading: popularComicLoading } =
-    useQuery(queryPopularComic);
-  const { data: updateComic, isLoading: updateCommicLoading } =
-    useQuery(queryUpdateComic);
+  const {
+    data: comicRecomendation,
+    isLoading: comicRecomendationLoading,
+    isError: comicRecomendationError,
+    error: comicRecomendationErrorObj,
+    refetch: refetchRecomendation,
+  } = useQuery(queryRecommendation(activeTab));
+  const {
+    data: popularComic,
+    isLoading: popularComicLoading,
+    isError: popularComicError,
+    error: popularComicErrorObj,
+    refetch: refetchPopularComic,
+  } = useQuery(queryPopularComic);
+  const {
+    data: updateComic,
+    isLoading: updateCommicLoading,
+    isError: updateComicError,
+    error: updateComicErrorObj,
+    refetch: refetchUpdateComic,
+  } = useQuery(queryUpdateComic);
+
+  const hasError = comicRecomendationError || popularComicError || updateComicError;
+  const firstError =
+    comicRecomendationErrorObj ?? popularComicErrorObj ?? updateComicErrorObj;
+
+  const handleRetry = () => {
+    void Promise.all([
+      refetchRecomendation(),
+      refetchPopularComic(),
+      refetchUpdateComic(),
+    ]);
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -144,8 +172,12 @@ function RouteComponent() {
         </div>
       </header>
 
-      {/* Featured Spotlight */}
-      <HeroSection comics={popularComic?.data.data ?? []} />
+      {hasError ? (
+        <ServerErrorPanel error={firstError} reset={handleRetry} />
+      ) : (
+        <>
+          {/* Featured Spotlight */}
+          <HeroSection comics={popularComic?.data.data ?? []} />
 
       {/* Main 12-Column Layout */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
@@ -283,7 +315,9 @@ function RouteComponent() {
             </div>
           </div>
         </aside>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

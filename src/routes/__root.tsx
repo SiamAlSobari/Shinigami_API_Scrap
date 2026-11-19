@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import type { QueryClient } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 import { JsonLd } from "@/common/components/JsonLd";
+import ServerErrorPage from "@/common/components/ServerError";
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -118,6 +119,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       title: "KOMIK READER : Baca KOMIK Online Terbaru & Populer",
     };
   },
+
+  errorComponent: ({ error, reset }) => (
+    <ServerErrorPage error={error} reset={reset} />
+  ),
 
   shellComponent: RootDocument,
 });

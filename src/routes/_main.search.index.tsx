@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { Search as SearchIcon, ChevronLeft, ChevronRight, SearchX } from "lucide-react";
 import { JsonLd } from "@/common/components/JsonLd";
+import { ServerErrorPanel } from "@/common/components/ServerError";
 
 type Search = {
   q: string;
@@ -63,11 +64,27 @@ function RouteComponent() {
     setPage(1);
   }, [q]);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["search", q, page],
     queryFn: async () => {
       if (!q.trim())
-        return { data: [], meta: { page: 1, total_page: 1, total_data: 0, total_record: 0 } };
+        return {
+          data: [],
+          meta: {
+            request_id: "",
+            timestamp: Date.now(),
+            process_time: "0ms",
+            page: 1,
+            page_size: PAGE_SIZE,
+            total_page: 1,
+            total_record: 0,
+            total_data: 0,
+            offset: 0,
+            limit: PAGE_SIZE,
+            has_next: false,
+            next_cursor: null,
+          },
+        };
       const res = await fetchSearch({
         data: { q: q.trim(), page, pageSize: PAGE_SIZE },
       });
@@ -79,7 +96,7 @@ function RouteComponent() {
   });
 
   const comics = data?.data ?? [];
-  const totalPage = data?.meta?.total_page ?? 1;
+  const hasNext = data?.meta?.has_next ?? false;
   const totalData = data?.meta?.total_record ?? data?.meta?.total_data ?? comics.length;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -114,7 +131,7 @@ function RouteComponent() {
           </h1>
           <p className="mt-1.5 font-mono text-xs uppercase text-[#c8c2b6] tabular-nums">
             {q
-              ? `DITEMUKAN ${totalData} JUDUL KOMIK TERKAIT`
+              ? `${hasNext ? "LEBIH DARI " : ""}${totalData} JUDUL KOMIK TERKAIT`
               : "KETIK JUDUL KOMIK YANG INGIN KAMU BACA"}
           </p>
         </div>
@@ -144,7 +161,9 @@ function RouteComponent() {
       </header>
 
       {/* Content */}
-      {isLoading ? (
+      {isError ? (
+        <ServerErrorPanel error={error} reset={() => void refetch()} />
+      ) : isLoading ? (
         <GridSkeleton />
       ) : comics.length === 0 ? (
         <NotFound query={q} />
@@ -157,7 +176,7 @@ function RouteComponent() {
       )}
 
       {/* Pagination */}
-      {comics.length > 0 && (
+      {!isError && comics.length > 0 && (
         <div className="flex items-center justify-between border border-[#27272e] bg-[#0c0c10] p-3">
           <button
             type="button"
@@ -173,12 +192,12 @@ function RouteComponent() {
           </button>
 
           <span className="font-mono text-xs font-bold uppercase text-[#c8c2b6] tabular-nums">
-            HALAMAN {page} DARI {totalPage}
+            HALAMAN {page}
           </span>
 
           <button
             type="button"
-            disabled={page >= totalPage || isFetching}
+            disabled={!hasNext || isFetching}
             onClick={() => {
               setPage((p) => p + 1);
               window.scrollTo({ top: 0, behavior: "smooth" });

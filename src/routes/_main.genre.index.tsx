@@ -5,6 +5,7 @@ import LoadingGrid from "@/features/comic/LoadingGrid";
 import GenreList from "@/features/genre/GenreList";
 import NoResultComicGenre from "@/features/genre/NoResultComicGenre";
 import BaseComicCard from "@/features/comic/BaseComicCard";
+import { ServerErrorPanel } from "@/common/components/ServerError";
 import z from "zod";
 
 const searchPValidate = z.object({
@@ -69,7 +70,13 @@ function RouteComponent() {
   const { g } = Route.useSearch();
 
   const { data: genres } = useQuery(genresQuery);
-  const { data: comicsGenre, isLoading } = useQuery(comicsByGenreQuery(g));
+  const {
+    data: comicsGenre,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery(comicsByGenreQuery(g));
 
   const list = comicsGenre?.data.data ?? [];
   const genreList = genres?.data.data ?? [];
@@ -115,7 +122,9 @@ function RouteComponent() {
             </span>
           </div>
 
-          {isLoading ? (
+          {isError ? (
+            <ServerErrorPanel error={error} reset={() => void refetch()} />
+          ) : isLoading ? (
             <LoadingGrid />
           ) : list.length === 0 ? (
             <NoResultComicGenre />

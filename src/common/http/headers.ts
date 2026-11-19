@@ -1,5 +1,8 @@
+const DEFAULT_SITE_URL = "https://s1.shinigami.mx";
 
-export function getScraperHeaders(baseUrl: string): Record<string, string> {
+export function getScraperHeaders(siteUrl: string = DEFAULT_SITE_URL): Record<string, string> {
+    const origin = siteUrl.replace(/\/+$/, "");
+
     return {
         // ===== BASIC =====
         Accept: "application/json, text/plain, */*",
@@ -7,8 +10,8 @@ export function getScraperHeaders(baseUrl: string): Record<string, string> {
         DNT: "1",
 
         // ===== ORIGIN & REFERER =====
-        Origin: baseUrl,
-        Referer: `${baseUrl}/`,
+        Origin: origin,
+        Referer: `${origin}/`,
 
         // ===== USER AGENT (WAJIB BROWSER) =====
         "User-Agent":

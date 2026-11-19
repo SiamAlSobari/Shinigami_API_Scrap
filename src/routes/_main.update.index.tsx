@@ -6,6 +6,7 @@ import { id } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import type { UpdateComic } from "@/common/interface";
 import { JsonLd } from "@/common/components/JsonLd";
+import { ServerErrorPanel } from "@/common/components/ServerError";
 import { getComicUpdate } from "@/api/servers/shinigami.server";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -180,7 +181,7 @@ function RouteComponent() {
   const [page, setPage] = useState(1);
   const fetchComicUpdate = useServerFn(getComicUpdate);
 
-  const { data: updateResponse, isLoading } = useQuery({
+  const { data: updateResponse, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["comic-update", type, page],
     queryFn: () =>
       fetchComicUpdate({
@@ -193,7 +194,7 @@ function RouteComponent() {
   });
 
   const comics = updateResponse?.data;
-  const totalPages = comics?.meta?.total_page || 1;
+  const hasNext = comics?.meta?.has_next ?? false;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -269,13 +270,13 @@ function RouteComponent() {
             {type === "mirror" ? "MIRROR" : "PROJECT"}
           </strong>
         </span>
-        <span>
-          HALAMAN {page} / {totalPages}
-        </span>
+        <span>HALAMAN {page}</span>
       </div>
 
       {/* Cards Grid */}
-      {isLoading ? (
+      {isError ? (
+        <ServerErrorPanel error={error} reset={() => void refetch()} />
+      ) : isLoading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {Array.from({ length: 16 }).map((_, i) => (
             <div
@@ -300,37 +301,39 @@ function RouteComponent() {
       )}
 
       {/* Pagination */}
-      <div className="mt-10 flex items-center justify-between border border-[#27272e] bg-[#0c0c10] p-3">
-        <button
-          type="button"
-          disabled={page <= 1}
-          onClick={() => {
-            setPage((p) => Math.max(1, p - 1));
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className="inline-flex min-h-11 items-center gap-2 border border-[#27272e] bg-[#141418] px-4 py-2 font-mono text-xs font-bold uppercase text-[#f4f1ea] transition-colors hover:border-[#f4f1ea] disabled:opacity-40 disabled:pointer-events-none"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Sebelumnya</span>
-        </button>
+      {!isError && (
+        <div className="mt-10 flex items-center justify-between border border-[#27272e] bg-[#0c0c10] p-3">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() => {
+              setPage((p) => Math.max(1, p - 1));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="inline-flex min-h-11 items-center gap-2 border border-[#27272e] bg-[#141418] px-4 py-2 font-mono text-xs font-bold uppercase text-[#f4f1ea] transition-colors hover:border-[#f4f1ea] disabled:opacity-40 disabled:pointer-events-none"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Sebelumnya</span>
+          </button>
 
-        <span className="font-mono text-xs font-bold uppercase text-[#c8c2b6] tabular-nums">
-          HALAMAN {page} DARI {totalPages}
-        </span>
+          <span className="font-mono text-xs font-bold uppercase text-[#c8c2b6] tabular-nums">
+            HALAMAN {page}
+          </span>
 
-        <button
-          type="button"
-          disabled={page >= totalPages}
-          onClick={() => {
-            setPage((p) => p + 1);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className="inline-flex min-h-11 items-center gap-2 border border-[#27272e] bg-[#141418] px-4 py-2 font-mono text-xs font-bold uppercase text-[#f4f1ea] transition-colors hover:border-[#f4f1ea] disabled:opacity-40 disabled:pointer-events-none"
-        >
-          <span>Selanjutnya</span>
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
+          <button
+            type="button"
+            disabled={!hasNext}
+            onClick={() => {
+              setPage((p) => p + 1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="inline-flex min-h-11 items-center gap-2 border border-[#27272e] bg-[#141418] px-4 py-2 font-mono text-xs font-bold uppercase text-[#f4f1ea] transition-colors hover:border-[#f4f1ea] disabled:opacity-40 disabled:pointer-events-none"
+          >
+            <span>Selanjutnya</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

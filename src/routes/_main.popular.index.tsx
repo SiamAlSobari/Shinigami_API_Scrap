@@ -59,7 +59,7 @@ const COUNTRY_CODE: Record<string, string> = {
 function RouteComponent() {
   const { popularComic } = Route.useLoaderData();
   const { page } = Route.useSearch();
-  const totalPages = popularComic.data.meta.total_page || 1;
+  const hasNext = popularComic.data.meta.has_next ?? false;
   const allItems = popularComic.data.data ?? [];
   const podiumItems = page === 1 ? allItems.slice(0, 3) : [];
 
@@ -88,7 +88,7 @@ function RouteComponent() {
         </div>
 
         <div className="border border-[#27272e] bg-[#0c0c10] px-3.5 py-2 font-mono text-xs font-bold uppercase text-[#c8c2b6] tabular-nums">
-          HALAMAN {page} DARI {totalPages}
+          HALAMAN {page}
         </div>
       </header>
 
@@ -200,13 +200,13 @@ function RouteComponent() {
         </Link>
 
         <span className="font-mono text-xs font-bold uppercase text-[#c8c2b6] tabular-nums">
-          HALAMAN {page} DARI {totalPages}
+          HALAMAN {page}
         </span>
 
         <Link
           to="."
           search={(prev) => ({ page: (prev.page ?? 1) + 1 })}
-          disabled={page >= totalPages}
+          disabled={!hasNext}
           className="inline-flex min-h-11 items-center gap-2 border border-[#27272e] bg-[#141418] px-4 py-2 font-mono text-xs font-bold uppercase text-[#f4f1ea] transition-colors hover:border-[#f4f1ea] aria-disabled:opacity-40 aria-disabled:pointer-events-none"
         >
           <span>Selanjutnya</span>
