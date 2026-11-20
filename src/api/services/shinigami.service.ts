@@ -10,8 +10,6 @@ import {
     TaxonomyItem,
     UpdateComic,
 } from "@/common/interface";
-import { client } from "@/common/libs/redis";
-import { getEnv } from "@/common/utils/env";
 import { AxiosInstance } from "axios";
 
 const API_FALLBACK = "https://api.shinigami.io/v1";
@@ -19,6 +17,26 @@ const SITE_URL = "https://s1.shinigami.mx";
 const CACHE_VERSION = "v2";
 const TAXONOMY_PAGE_SIZE = 100;
 const CHAPTER_FETCH_LIMIT = 2000;
+
+export interface CacheAdapter {
+    get<T>(key: string): Promise<T | null>;
+    set(key: string, value: unknown, ttlSeconds: number): Promise<void>;
+}
+
+const noopCache: CacheAdapter = {
+    get: async () => null,
+    set: async () => {},
+};
+
+export function normalizeApiUrl(value: string | undefined): string {
+    const raw = (value?.trim() || API_FALLBACK).replace(/\/+$/, "");
+    // The v2 API only exists on api.shinigami.io. A stale API_URL from an
+    // older deployment points at the retired host and answers 403.
+    if (!/^https:\/\/api(?:-dev)?\.shinigami\.io(?:\/v1)?$/.test(raw)) {
+        return API_FALLBACK;
+    }
+    return raw.endsWith("/v1") ? raw : `${raw}/v1`;
+}
 
 type RawMeta = Partial<{
     request_id: string;
@@ -49,21 +67,15 @@ type ListContext = {
     hasNext?: boolean;
 };
 
-class ShinigamiService {
+export class ShinigamiService {
     private client: AxiosInstance;
+    private apiUrl: string;
+    private cache: CacheAdapter;
 
-    constructor() {
-        this.client = createAxiosClient(API_FALLBACK, SITE_URL);
-    }
-
-    private get apiUrl(): string {
-        const raw = (getEnv().API_URL || API_FALLBACK).replace(/\/+$/, "");
-        // The v2 API only exists on api.shinigami.io. A stale API_URL from an
-        // older deployment points at the retired host and answers 403.
-        if (!/^https:\/\/api(?:-dev)?\.shinigami\.io(?:\/v1)?$/.test(raw)) {
-            return API_FALLBACK;
-        }
-        return raw.endsWith("/v1") ? raw : `${raw}/v1`;
+    constructor(apiUrl?: string, cache: CacheAdapter = noopCache) {
+        this.apiUrl = normalizeApiUrl(apiUrl);
+        this.cache = cache;
+        this.client = createAxiosClient(this.apiUrl, SITE_URL);
     }
 
     private key(...parts: Array<string | number>): string {
@@ -72,21 +84,18 @@ class ShinigamiService {
 
     private async safeGetCache<T>(key: string): Promise<T | null> {
         try {
-            const cached = await client.get(key);
-            if (cached) {
-                return JSON.parse(cached) as T;
-            }
+            return await this.cache.get<T>(key);
         } catch (e) {
-            console.warn(`[Redis Cache Error] GET ${key}:`, e);
+            console.warn(`[Cache Error] GET ${key}:`, e);
         }
         return null;
     }
 
     private async safeSetCache(key: string, data: unknown, ttlSeconds: number): Promise<void> {
         try {
-            await client.set(key, JSON.stringify(data), "EX", ttlSeconds);
+            await this.cache.set(key, data, ttlSeconds);
         } catch (e) {
-            console.warn(`[Redis Cache Error] SET ${key}:`, e);
+            console.warn(`[Cache Error] SET ${key}:`, e);
         }
     }
 
@@ -494,5 +503,3 @@ class ShinigamiService {
         return normalized;
     }
 }
-
-export const shinigamiService = new ShinigamiService();
