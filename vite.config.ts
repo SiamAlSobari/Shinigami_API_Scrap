@@ -17,7 +17,7 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
-    netlify(),
+    ...(isDev ? [] : [netlify()]),
     viteReact(),
     VitePWA({
       registerType: 'autoUpdate',

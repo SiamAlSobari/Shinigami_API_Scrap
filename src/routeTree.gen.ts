@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as MainRouteImport } from './routes/_main'
 import { Route as MainIndexRouteImport } from './routes/_main.index'
+import { Route as ApiDiagRouteImport } from './routes/api.diag'
 import { Route as ApiCoverRouteImport } from './routes/api.cover'
 import { Route as MainHomeRouteImport } from './routes/_main.home'
 import { Route as MainUpdateIndexRouteImport } from './routes/_main.update.index'
@@ -41,6 +42,11 @@ const MainIndexRoute = MainIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MainRoute,
+} as any)
+const ApiDiagRoute = ApiDiagRouteImport.update({
+  id: '/api/diag',
+  path: '/api/diag',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCoverRoute = ApiCoverRouteImport.update({
   id: '/api/cover',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/home': typeof MainHomeRoute
   '/api/cover': typeof ApiCoverRoute
+  '/api/diag': typeof ApiDiagRoute
   '/': typeof MainIndexRoute
   '/genre': typeof MainGenreIndexRoute
   '/history': typeof MainHistoryIndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/home': typeof MainHomeRoute
   '/api/cover': typeof ApiCoverRoute
+  '/api/diag': typeof ApiDiagRoute
   '/': typeof MainIndexRoute
   '/genre': typeof MainGenreIndexRoute
   '/history': typeof MainHistoryIndexRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_main/home': typeof MainHomeRoute
   '/api/cover': typeof ApiCoverRoute
+  '/api/diag': typeof ApiDiagRoute
   '/_main/': typeof MainIndexRoute
   '/_main/genre/': typeof MainGenreIndexRoute
   '/_main/history/': typeof MainHistoryIndexRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/home'
     | '/api/cover'
+    | '/api/diag'
     | '/'
     | '/genre'
     | '/history'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/home'
     | '/api/cover'
+    | '/api/diag'
     | '/'
     | '/genre'
     | '/history'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_main/home'
     | '/api/cover'
+    | '/api/diag'
     | '/_main/'
     | '/_main/genre/'
     | '/_main/history/'
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiCoverRoute: typeof ApiCoverRoute
+  ApiDiagRoute: typeof ApiDiagRoute
   ReadComicIdChapterIdIndexRoute: typeof ReadComicIdChapterIdIndexRoute
 }
 
@@ -216,6 +229,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof MainIndexRouteImport
       parentRoute: typeof MainRoute
+    }
+    '/api/diag': {
+      id: '/api/diag'
+      path: '/api/diag'
+      fullPath: '/api/diag'
+      preLoaderRoute: typeof ApiDiagRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/cover': {
       id: '/api/cover'
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiCoverRoute: ApiCoverRoute,
+  ApiDiagRoute: ApiDiagRoute,
   ReadComicIdChapterIdIndexRoute: ReadComicIdChapterIdIndexRoute,
 }
 export const routeTree = rootRouteImport

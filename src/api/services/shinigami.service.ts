@@ -57,7 +57,13 @@ class ShinigamiService {
     }
 
     private get apiUrl(): string {
-        return (getEnv().API_URL || API_FALLBACK).replace(/\/+$/, "");
+        const raw = (getEnv().API_URL || API_FALLBACK).replace(/\/+$/, "");
+        // The v2 API only exists on api.shinigami.io. A stale API_URL from an
+        // older deployment points at the retired host and answers 403.
+        if (!/^https:\/\/api(?:-dev)?\.shinigami\.io(?:\/v1)?$/.test(raw)) {
+            return API_FALLBACK;
+        }
+        return raw.endsWith("/v1") ? raw : `${raw}/v1`;
     }
 
     private key(...parts: Array<string | number>): string {

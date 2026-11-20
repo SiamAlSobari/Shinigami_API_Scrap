@@ -26,6 +26,7 @@ const GA_ID = "G-L9BC6FV4EY";
 declare global {
   interface Window {
     gtag: ((...args: unknown[]) => void) | undefined;
+    dataLayer?: unknown[];
   }
 }
 
@@ -109,13 +110,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         { rel: "apple-touch-icon", href: "/komik_reader.png" },
         { rel: "manifest", href: "/manifest.webmanifest" },
       ],
-      scripts: [
-        // Google tag (gtag.js) — Google Analytics
-        { src: `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`, async: true },
-        {
-          children: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${GA_ID}');`,
-        },
-      ],
       title: "KOMIK READER : Baca KOMIK Online Terbaru & Populer",
     };
   },
@@ -156,6 +150,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     inject();
 
+    if (!document.querySelector("script[data-ga4]")) {
+      const script = document.createElement("script");
+      script.async = true;
+      script.dataset.ga4 = "true";
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+      document.head.appendChild(script);
+
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = (...args: unknown[]) => {
+        window.dataLayer?.push(args);
+      };
+      window.gtag("js", new Date());
+      window.gtag("config", GA_ID);
+    }
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/sw.js").catch((err) => {
@@ -170,6 +179,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <title>KOMIK READER : Baca KOMIK Online Terbaru & Populer</title>
         <HeadContent />
+      </head>
+      <body>
+        <div
+          hidden
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{
+            __html: `<!--
+THESIS: KOMIK READER stages live Manga, Manhwa, and Manhua as physical 3D Tankobon volumes in a darkroom press studio, refusing generic SaaS feature grids, pill badges, and fabricated stats.
+OWN-WORLD: Obsidian darkroom ground (#09090b), warm newsprint paper (#f4f1ea), muted stone (#c8c2b6), graphite panel borders (#27272e), and single Hanko vermilion accent (#e11d48); Big Shoulders Display mastheads, Barlow prose, and Chivo Mono tabular indices.
+STORY: Visitors inspect live trending 3D comic volumes, verify real chapter releases and ratings, and jump directly into reading or series archives.
+FIRST VIEWPORT: Asymmetric 12-column stage: 7-column interactive Three.js WebGL 3D Tankobon rack with spine/page-edge geometry on left, 5-column live Volume Dossier with direct Read Chapter CTA on right, anchored by a spine index bar.
+FORM: 3D Interactive Tankobon Press Stage (candidate 3, seed key f902f592, raised by signals-instruments-darkroom-safelight-bay and ikeda-datamatics).
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->`,
+          }}
+        />
         <JsonLd
           data={{
             "@context": "https://schema.org",
@@ -186,22 +211,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               },
               "query-input": "required name=search_term_string",
             },
-          }}
-        />
-      </head>
-      <body>
-        <div
-          hidden
-          aria-hidden="true"
-          dangerouslySetInnerHTML={{
-            __html: `<!--
-THESIS: KOMIK READER stages live Manga, Manhwa, and Manhua as physical 3D Tankobon volumes in a darkroom press studio, refusing generic SaaS feature grids, pill badges, and fabricated stats.
-OWN-WORLD: Obsidian darkroom ground (#09090b), warm newsprint paper (#f4f1ea), muted stone (#c8c2b6), graphite panel borders (#27272e), and single Hanko vermilion accent (#e11d48); Big Shoulders Display mastheads, Barlow prose, and Chivo Mono tabular indices.
-STORY: Visitors inspect live trending 3D comic volumes, verify real chapter releases and ratings, and jump directly into reading or series archives.
-FIRST VIEWPORT: Asymmetric 12-column stage: 7-column interactive Three.js WebGL 3D Tankobon rack with spine/page-edge geometry on left, 5-column live Volume Dossier with direct Read Chapter CTA on right, anchored by a spine index bar.
-FORM: 3D Interactive Tankobon Press Stage (candidate 3, seed key f902f592, raised by signals-instruments-darkroom-safelight-bay and ikeda-datamatics).
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
--->`,
           }}
         />
         {children}
