@@ -1,9 +1,8 @@
-import { searchComicServer } from "@/api/servers/shinigami.server";
+import { searchComicServer } from "@/api/shinigami";
 import BaseComicCard from "@/features/comic/BaseComicCard";
 import BaseComicCardSkeleton from "@/features/comic/BaseComicCardSkeleton";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { Search as SearchIcon, ChevronLeft, ChevronRight, SearchX } from "lucide-react";
 import { JsonLd } from "@/common/components/JsonLd";
@@ -57,7 +56,6 @@ function RouteComponent() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [inputQuery, setInputQuery] = useState(q);
-  const fetchSearch = useServerFn(searchComicServer);
 
   useEffect(() => {
     setInputQuery(q);
@@ -85,7 +83,7 @@ function RouteComponent() {
             next_cursor: null,
           },
         };
-      const res = await fetchSearch({
+      const res = await searchComicServer({
         data: { q: q.trim(), page, pageSize: PAGE_SIZE },
       });
       return res.data;

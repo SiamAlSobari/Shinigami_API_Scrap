@@ -21,8 +21,9 @@ import {
   getComicRecomendation,
   getComicUpdate,
   getPopularComic,
-} from "@/api/servers/shinigami.server";
+} from "@/api/shinigami";
 import { JsonLd } from "@/common/components/JsonLd";
+import { ensureQueryDataSafe } from "@/common/utils/query";
 import type { PopularComic } from "@/common/interface";
 
 const MangaStage3D = React.lazy(
@@ -51,10 +52,10 @@ const queryRecommendLanding = (format: string) =>
 export const Route = createFileRoute("/_main/")({
   component: LandingPage,
   loader: async ({ context }) => {
-    await Promise.allSettled([
-      context.queryClient.ensureQueryData(queryPopularLanding),
-      context.queryClient.ensureQueryData(queryUpdateLanding),
-      context.queryClient.ensureQueryData(queryRecommendLanding("manhwa")),
+    await Promise.all([
+      ensureQueryDataSafe(context.queryClient, queryPopularLanding),
+      ensureQueryDataSafe(context.queryClient, queryUpdateLanding),
+      ensureQueryDataSafe(context.queryClient, queryRecommendLanding("manhwa")),
     ]);
   },
   head: ({ match }) => ({

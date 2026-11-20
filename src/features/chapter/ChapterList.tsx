@@ -20,8 +20,7 @@ import { id } from "date-fns/locale";
 import { Meta } from "@/common/interface";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getChapterList } from "@/api/servers/shinigami.server";
+import { getChapterList } from "@/api/shinigami";
 import { getLastReadChapter } from "@/common/utils/chapter-history";
 import { filterAndRankChapters } from "@/common/utils/chapter-filter";
 import { useState, useMemo, useEffect } from "react";
@@ -50,7 +49,6 @@ export function ChapterList({
   latestChapterNumber,
 }: ChapterListProps) {
   const navigate = useNavigate();
-  const chapterList = useServerFn(getChapterList);
   const [filterQuery, setFilterQuery] = useState("");
   const [dialogFilterQuery, setDialogFilterQuery] = useState("");
   const [sortAsc, setSortAsc] = useState(false);
@@ -107,7 +105,7 @@ export function ChapterList({
     queryKey: ["dialog-chapters", comicId],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
-      chapterList({
+      getChapterList({
         data: {
           comicId,
           page: pageParam,

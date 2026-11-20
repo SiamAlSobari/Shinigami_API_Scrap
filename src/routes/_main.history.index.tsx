@@ -19,8 +19,7 @@ import {
 } from "@/common/utils/chapter-history";
 import { filterAndRankChapters } from "@/common/utils/chapter-filter";
 import { JsonLd } from "@/common/components/JsonLd";
-import { useServerFn } from "@tanstack/react-start";
-import { getComicDetail } from "@/api/servers/shinigami.server";
+import { getComicDetail } from "@/api/shinigami";
 
 const SITE_URL = "https://komik-reader.my.id";
 
@@ -63,7 +62,6 @@ function HistoryPage() {
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [healingIds, setHealingIds] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
-  const comicDetail = useServerFn(getComicDetail);
 
   useEffect(() => {
     const rawHistory = getChapterHistory();
@@ -84,7 +82,7 @@ function HistoryPage() {
 
       const healPromises = itemsToHeal.map(async (item) => {
         try {
-          const res = await comicDetail({ data: { comicId: item.comic_id } });
+          const res = await getComicDetail({ data: { comicId: item.comic_id } });
           if (res?.data?.data) {
             return {
               comic_id: item.comic_id,
@@ -135,7 +133,7 @@ function HistoryPage() {
     };
 
     healHistory();
-  }, [comicDetail]);
+  }, []);
 
   const handleDelete = (comicId: string) => {
     deleteHistoryItem(comicId);

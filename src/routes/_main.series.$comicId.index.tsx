@@ -1,7 +1,10 @@
-import { getChapterList, getComicDetail } from "@/api/servers/shinigami.server";
+import { getChapterList, getComicDetail } from "@/api/shinigami";
 import { ChapterList } from "@/features/chapter/ChapterList";
 import { ComicDetail } from "@/features/comic/ComicDetail";
 import ComicDetailSkeleton from "@/features/comic/ComicDetailSkeleton";
+import { ServerErrorPanel } from "@/common/components/ServerError";
+import { ensureQueryDataSafe } from "@/common/utils/query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { JsonLd } from "@/common/components/JsonLd";
 
@@ -11,6 +14,20 @@ type ChapterSearch = {
 
 const SITE_URL = "https://komik-reader.my.id";
 
+const comicDetailQuery = (comicId: string) =>
+  queryOptions({
+    queryKey: ["comic", comicId],
+    queryFn: () => getComicDetail({ data: { comicId } }),
+    staleTime: 1000 * 60 * 30,
+  });
+
+const chapterPageQuery = (comicId: string, page: number) =>
+  queryOptions({
+    queryKey: ["chapter-list", comicId, page],
+    queryFn: () => getChapterList({ data: { comicId, page, pageSize: 24 } }),
+    staleTime: 1000 * 60 * 10,
+  });
+
 export const Route = createFileRoute("/_main/series/$comicId/")({
   component: RouteComponent,
   validateSearch: (search: Record<string, string>): ChapterSearch => ({
@@ -19,28 +36,37 @@ export const Route = createFileRoute("/_main/series/$comicId/")({
   loaderDeps: ({ search: { page } }) => ({
     page,
   }),
-  loader: async ({ params, deps: { page } }) => {
-    const [comicDetail, initialChapterList] = await Promise.all([
-      getComicDetail({ data: { comicId: params.comicId } }),
-      getChapterList({ data: { comicId: params.comicId, page, pageSize: 24 } }),
+  loader: async ({ context, params, deps: { page } }) => {
+    const [comicDetail, chapterResult] = await Promise.all([
+      ensureQueryDataSafe(context.queryClient, comicDetailQuery(params.comicId)),
+      ensureQueryDataSafe(
+        context.queryClient,
+        chapterPageQuery(params.comicId, page)
+      ),
     ]);
 
-    const totalPages = initialChapterList.data?.meta?.total_page || 1;
-    let chapterList = initialChapterList;
+    let chapterList = chapterResult;
     let effectivePage = page;
 
-    if (page > totalPages && totalPages >= 1) {
+    const totalPages = chapterList?.data?.meta?.total_page || 1;
+    if (chapterList && page > totalPages && totalPages >= 1) {
       effectivePage = totalPages;
-      chapterList = await getChapterList({
-        data: { comicId: params.comicId, page: effectivePage, pageSize: 24 },
-      });
+      chapterList =
+        (await ensureQueryDataSafe(
+          context.queryClient,
+          chapterPageQuery(params.comicId, effectivePage)
+        )) ?? chapterList;
     }
 
-    return { comicDetail, chapterList, effectivePage };
+    return {
+      comicDetail,
+      chapterList,
+      effectivePage,
+    };
   },
   pendingComponent: ComicDetailSkeleton,
   head: ({ loaderData, params }) => {
-    const comic = loaderData?.comicDetail.data.data;
+    const comic = loaderData?.comicDetail?.data?.data;
     if (!comic) {
       return {
         meta: [],
@@ -92,10 +118,44 @@ export const Route = createFileRoute("/_main/series/$comicId/")({
 });
 
 function RouteComponent() {
-  const { comicDetail, chapterList, effectivePage } = Route.useLoaderData();
+  const {
+    comicDetail: initialComic,
+    chapterList: initialChapters,
+    effectivePage,
+  } = Route.useLoaderData();
   const { comicId } = Route.useParams();
   const { page } = Route.useSearch();
-  const comic = comicDetail.data.data;
+
+  const {
+    data: comicDetail,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    ...comicDetailQuery(comicId),
+    initialData: initialComic ?? undefined,
+  });
+
+  const { data: chapterList } = useQuery({
+    ...chapterPageQuery(comicId, effectivePage ?? page),
+    initialData: initialChapters ?? undefined,
+  });
+
+  const comic = comicDetail?.data?.data;
+
+  if (isLoading) {
+    return <ComicDetailSkeleton />;
+  }
+
+  if (isError || !comic) {
+    return (
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <ServerErrorPanel error={error} reset={() => void refetch()} />
+      </main>
+    );
+  }
+
   const activePage = effectivePage ?? page;
 
   const genres = comic.taxonomy?.Genre?.map((g) => g.name) ?? [];
@@ -161,9 +221,9 @@ function RouteComponent() {
       <ComicDetail comic={comic} />
       <ChapterList
         comicId={comicId}
-        meta={chapterList.data?.meta}
+        meta={chapterList?.data?.meta}
         page={activePage}
-        chapters={chapterList.data?.data ?? []}
+        chapters={chapterList?.data?.data ?? []}
         latestChapterNumber={comic.latest_chapter_number}
       />
     </main>

@@ -1,4 +1,4 @@
-import { shinigamiService } from '@/api/services/shinigami.service'
+import { serverShinigamiService as shinigamiService } from '@/api/services/shinigami.service.server'
 import { createFileRoute } from '@tanstack/react-router'
 
 const SITE_URL = 'https://komik-reader.my.id'

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getComicGenre, getGenreList } from "@/api/servers/shinigami.server";
+import { getComicGenre, getGenreList } from "@/api/shinigami";
+import { ensureQueryDataSafe } from "@/common/utils/query";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import LoadingGrid from "@/features/comic/LoadingGrid";
 import GenreList from "@/features/genre/GenreList";
@@ -29,15 +30,15 @@ export const Route = createFileRoute("/_main/genre/")({
   validateSearch: searchPValidate,
   loaderDeps: ({ search: { g } }) => ({ g }),
   loader: async ({ context, deps: { g } }) => {
-    const genres = await context.queryClient.ensureQueryData(genresQuery);
-    const comics = await context.queryClient.ensureQueryData(
-      comicsByGenreQuery(g),
-    );
+    const [genres, comics] = await Promise.all([
+      ensureQueryDataSafe(context.queryClient, genresQuery),
+      ensureQueryDataSafe(context.queryClient, comicsByGenreQuery(g)),
+    ]);
     return { genres, comics };
   },
   head: ({ loaderData }) => {
-    const genreList = loaderData?.genres.data.data ?? [];
-    const comicList = loaderData?.comics.data.data ?? [];
+    const genreList = loaderData?.genres?.data?.data ?? [];
+    const comicList = loaderData?.comics?.data?.data ?? [];
     const firstImage = comicList.find((c) => c.cover_image_url)?.cover_image_url;
     const genreNames = genreList.map((g) => g.name).join(", ");
     const SITE_URL = "https://komik-reader.my.id";

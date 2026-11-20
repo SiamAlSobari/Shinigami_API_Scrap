@@ -7,8 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { UpdateComic } from "@/common/interface";
 import { JsonLd } from "@/common/components/JsonLd";
 import { ServerErrorPanel } from "@/common/components/ServerError";
-import { getComicUpdate } from "@/api/servers/shinigami.server";
-import { useServerFn } from "@tanstack/react-start";
+import { getComicUpdate } from "@/api/shinigami";
 
 const SITE_URL = "https://komik-reader.my.id";
 
@@ -179,12 +178,11 @@ const UpdateDispatchCard = memo(function UpdateDispatchCard({
 function RouteComponent() {
   const [type, setType] = useState<"mirror" | "project">("mirror");
   const [page, setPage] = useState(1);
-  const fetchComicUpdate = useServerFn(getComicUpdate);
 
   const { data: updateResponse, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["comic-update", type, page],
     queryFn: () =>
-      fetchComicUpdate({
+      getComicUpdate({
         data: {
           type,
           page,

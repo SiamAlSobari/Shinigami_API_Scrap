@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { PopularComicCardBase } from "@/features/comic/PopularComicCardBase";
-import { getPopularComic } from "@/api/servers/shinigami.server";
+import LoadingGrid from "@/features/comic/LoadingGrid";
+import { ServerErrorPanel } from "@/common/components/ServerError";
+import { ensureQueryDataSafe } from "@/common/utils/query";
+import { getPopularComic } from "@/api/shinigami";
 import { ChevronLeft, ChevronRight, Star, Eye, BookOpen } from "lucide-react";
 import { JsonLd } from "@/common/components/JsonLd";
 
@@ -10,20 +14,28 @@ type ComicSearch = {
 
 const SITE_URL = "https://komik-reader.my.id";
 
+const popularQuery = (page: number) =>
+  queryOptions({
+    queryKey: ["popular-page", page],
+    queryFn: () => getPopularComic({ data: { page, pageSize: 24 } }),
+    staleTime: 1000 * 60 * 10,
+  });
+
 export const Route = createFileRoute("/_main/popular/")({
   validateSearch: (search): ComicSearch => ({
-    page: Number(search.page || 1),
+    page: Math.max(1, Math.floor(Number(search.page) || 1)),
   }),
   loaderDeps: ({ search: { page } }) => ({ page }),
-  loader: async ({ deps: { page } }) => {
-    const popularComic = await getPopularComic({
-      data: { page, pageSize: 24 },
-    });
+  loader: async ({ context, deps: { page } }) => {
+    const popularComic = await ensureQueryDataSafe(
+      context.queryClient,
+      popularQuery(page)
+    );
     return { popularComic };
   },
 
   head: ({ loaderData }) => {
-    const list = loaderData?.popularComic.data.data ?? [];
+    const list = loaderData?.popularComic?.data?.data ?? [];
     const firstImage = list.find((item) => item.cover_image_url)?.cover_image_url;
 
     const title = "Komik Populer & Trending - KOMIK READER";
@@ -57,8 +69,35 @@ const COUNTRY_CODE: Record<string, string> = {
 };
 
 function RouteComponent() {
-  const { popularComic } = Route.useLoaderData();
+  const { popularComic: initialPopular } = Route.useLoaderData();
   const { page } = Route.useSearch();
+  const {
+    data: popularComic,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    ...popularQuery(page),
+    initialData: initialPopular ?? undefined,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <LoadingGrid />
+      </div>
+    );
+  }
+
+  if (isError || !popularComic) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <ServerErrorPanel error={error} reset={() => void refetch()} />
+      </div>
+    );
+  }
+
   const hasNext = popularComic.data.meta.has_next ?? false;
   const allItems = popularComic.data.data ?? [];
   const podiumItems = page === 1 ? allItems.slice(0, 3) : [];

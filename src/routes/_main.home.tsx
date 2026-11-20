@@ -11,8 +11,9 @@ import {
   getComicRecomendation,
   getComicUpdate,
   getPopularComic,
-} from "@/api/servers/shinigami.server";
+} from "@/api/shinigami";
 import { queryOptions, useQuery } from "@tanstack/react-query";
+import { ensureQueryDataSafe } from "@/common/utils/query";
 
 import PopularComicCard from "@/features/comic/PopularComicCard";
 import BaseComicCard from "@/features/comic/BaseComicCard";
@@ -77,9 +78,9 @@ export const Route = createFileRoute("/_main/home")({
   }),
   loader: async ({ context }) => {
     await Promise.all([
-      context.queryClient.ensureQueryData(queryPopularComic),
-      context.queryClient.ensureQueryData(queryUpdateComic),
-      context.queryClient.ensureQueryData(queryRecommendation("manhwa")),
+      ensureQueryDataSafe(context.queryClient, queryPopularComic),
+      ensureQueryDataSafe(context.queryClient, queryUpdateComic),
+      ensureQueryDataSafe(context.queryClient, queryRecommendation("manhwa")),
     ]);
   },
 });

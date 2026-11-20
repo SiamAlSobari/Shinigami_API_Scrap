@@ -1,4 +1,5 @@
-import { getChapterDetail, getComicDetail } from "@/api/servers/shinigami.server";
+import { getChapterDetail, getComicDetail } from "@/api/shinigami";
+import { ensureQueryDataSafe } from "@/common/utils/query";
 import { setChapterHistory } from "@/common/utils/chapter-history";
 import { ChapterImage } from "@/features/chapter/ChapterImage";
 import ChapterNavigation from "@/features/chapter/ChapterNavigation";
@@ -36,8 +37,8 @@ const queryComic = (comicId: string) =>
 export const Route = createFileRoute("/read/$comicId/$chapterId/")({
   loader: async ({ context, params }) => {
     const [chapter, comic] = await Promise.all([
-      context.queryClient.ensureQueryData(queryChapter(params.chapterId)),
-      context.queryClient.ensureQueryData(queryComic(params.comicId)),
+      ensureQueryDataSafe(context.queryClient, queryChapter(params.chapterId)),
+      ensureQueryDataSafe(context.queryClient, queryComic(params.comicId)),
     ]);
     return { chapter, comic };
   },
